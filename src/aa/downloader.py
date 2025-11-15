@@ -38,6 +38,7 @@ import numpy as np
 import os
 import rioxarray
 import pyproj
+from loguru import logger
 
 
 def download_MET_model_static_fields(
@@ -68,11 +69,13 @@ def download_MET_model_static_fields(
     surface_geopotential, and land_area_fraction.
     The function creates the output directory if it does not exist.
     """
+    logger.info(f"Creating output directory at {out_path} if it does not exist...")
     os.makedirs(out_path, exist_ok=True)
-    out_file = os.path.join(out_path, f"{model}_static_fields_{resolution}.nc")
 
+    out_file = os.path.join(out_path, f"{model}_static_fields_{resolution}.nc")
     file = "https://thredds.met.no/thredds/dodsC/aromearcticarchive/2022/06/03/arome_arctic_det_2_5km_20220603T00Z.nc"
 
+    logger.info(f"Downloading static fields from {file}...")
     with xr.open_dataset(file) as static_fields:
         selected_fields = static_fields.isel(time=0)[
             [
@@ -86,10 +89,10 @@ def download_MET_model_static_fields(
             ]
         ].squeeze()
 
-        # Save to NetCDF
+        logger.info(f"Saving static fields to {out_file}...")
         selected_fields.to_netcdf(out_file, unlimited_dims=())
 
-    print(
+    logger.success(
         f"Static fields for the model {model} resolution {resolution} were successfully saved into {out_file}."
     )
     return os.path.abspath(out_file)
@@ -171,14 +174,21 @@ def download_latest_near_surface_field_data(
     - The output is reprojected to WGS84 (EPSG:4326) and saved as a NetCDF file.
 
     """
+    logger.info(
+        f"Starting download and processing for model: {model}, resolution: {resolution}"
+    )
+
     static_file = os.path.join(static_path, f"{model}_static_fields_{resolution}.nc")
     if not os.path.isfile(static_file):
+        logger.info(f"Static file not found at {static_file}, downloading...")
         static_file = download_MET_model_static_fields(
             model=model, resolution=resolution, out_path=static_path
         )
+    else:
+        logger.info(f"Using existing static file: {static_file}")
 
+    logger.info("Opening static fields dataset...")
     static_fields = xr.open_dataset(static_file)
-
     model_varnames = {
         "T": "air_temperature_2m",
         "RH": "relative_humidity_2m",
@@ -200,7 +210,6 @@ def download_latest_near_surface_field_data(
         # "ABL_height": "atmosphere_boundary_layer_thickness",
         "precip": "precipitation_amount_acc",
     }
-
     model_varis = list(model_varnames.values()) + [
         "x",
         "y",
@@ -212,6 +221,7 @@ def download_latest_near_surface_field_data(
     ]
     source_crs = static_fields.projection_lambert.attrs["proj4"]
 
+    logger.info(f"Opening and subsetting dataset from {filename}...")
     with xr.open_dataset(filename) as full_file:
         ds = (
             full_file.isel(time=slice(0, time_steps))[model_varis]
@@ -225,6 +235,7 @@ def download_latest_near_surface_field_data(
             .squeeze()
         )
 
+    logger.info("Processing flux and accumulated variables...")
     for vari in model_varis:
         if vari[:8] == "integral":
             ds[vari][dict(time=range(1, len(ds["time"])))] -= ds[vari][
@@ -244,10 +255,10 @@ def download_latest_near_surface_field_data(
             ds[vari].attrs["long_name"] = ds[vari].attrs["long_name"][12:]
             ds = ds.rename({vari: vari[:-4]})
 
-    print(f"Done downloading {filename}.")
+    logger.info(f"Done downloading and initial processing of {filename}.")
 
     if "integral_of_surface_net_downward_shortwave_flux_wrt_time" in model_varis:
-        # Converting radiative fluxes from net into up
+        logger.info("Converting radiative fluxes from net into up...")
         ds["surface_upwelling_shortwave_flux_in_air"] = (
             ds["surface_downwelling_shortwave_flux_in_air"]
             - ds["surface_net_downward_shortwave_flux"]
@@ -256,56 +267,47 @@ def download_latest_near_surface_field_data(
             ds["surface_downwelling_longwave_flux_in_air"]
             - ds["surface_net_downward_longwave_flux"]
         )
-
         del ds["surface_net_downward_shortwave_flux"]
         del ds["surface_net_downward_longwave_flux"]
 
     if "x_wind_10m" in model_varis:
-        # Wind u and v components in the original ds are grid-related.
-        # Therefore, we rotate here the wind components from grid- to earth-related coordinates.
+        logger.info(
+            "Rotating wind components and calculating wind direction and speed..."
+        )
         cone = np.sin(
             np.abs(
                 np.deg2rad(ds.projection_lambert.attrs["latitude_of_projection_origin"])
             )
-        )  # cone factor
-
+        )
         ds["diffn"] = (
             ds.projection_lambert.attrs["longitude_of_central_meridian"] - ds.longitude
         )
         ds["diffn"].values[ds["diffn"].values > 180.0] -= 360
         ds["diffn"].values[ds["diffn"].values < -180.0] += 360
-
         ds["alpha"] = np.deg2rad(ds["diffn"]) * cone
-
         ds["eastward_wind_10m"] = ds["x_wind_10m"] * np.cos(ds["alpha"]) - ds[
             "y_wind_10m"
         ] * np.sin(ds["alpha"])
         ds["northward_wind_10m"] = ds["y_wind_10m"] * np.cos(ds["alpha"]) + ds[
             "x_wind_10m"
         ] * np.sin(ds["alpha"])
-
-        # Calculating wind direction
         ds["wind_direction_10m"] = (
             np.rad2deg(np.arctan2(-ds["eastward_wind_10m"], -ds["northward_wind_10m"]))
             + 360.0
         ) % 360.0
-
-        # Calculating wind speed
         ds["wind_speed_10m"] = np.sqrt(
             (ds["eastward_wind_10m"] ** 2.0) + (ds["northward_wind_10m"] ** 2.0)
         )
-
         del ds["x_wind_10m"]
         del ds["y_wind_10m"]
         del ds["diffn"]
         del ds["alpha"]
 
-    # Calculating potential temperature
     if ("air_temperature_2m" in model_varis) & ("surface_air_pressure" in model_varis):
+        logger.info("Calculating potential temperature and relative humidity...")
         ds["air_potential_temperature_2m"] = (ds["air_temperature_2m"]) * (
             (1.0e5 / (ds["surface_air_pressure"])) ** (287.0 / 1005.0)
         )
-
         if "specific_humidity_2m" in model_varis:
             T = ds["air_temperature_2m"] - 273.15
             e = (ds["specific_humidity_2m"] * ds["surface_air_pressure"]) / (
@@ -313,15 +315,19 @@ def download_latest_near_surface_field_data(
             )
             ds["relative_humidty_2m"] = e / (611.2 * np.exp((17.62 * T) / (243.12 + T)))
 
+    logger.info("Reprojecting dataset to WGS84...")
     target_crs = "+proj=longlat +datum=WGS84 +no_defs"
     ds.rio.write_crs(source_crs, inplace=True)
     ds_reprojected = ds.rio.reproject(target_crs)
     ds_reprojected = ds_reprojected.rename({"x": "longitude", "y": "latitude"})
-
     ds_reprojected = ds_reprojected.sel(
         latitude=slice(lat_lims[1], lat_lims[0]),
         longitude=slice(lon_lims[0], lon_lims[1]),
     )
+
+    logger.info(f"Saving output to {output}...")
+    os.makedirs(os.path.dirname(output), exist_ok=True)
     ds_reprojected.to_netcdf(output)
+    logger.success("Processing complete.")
 
     return ds_reprojected
