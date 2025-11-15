@@ -10,5 +10,7 @@ dependencies = [
     "numpy>=2.3.4",
     "pandas>=2.3.3",
     "pyproj>=3.7.2",
+    "rasterio>=1.4.3",
+    "rioxarray>=0.20.0",
     "xarray>=2025.10.1",
 ]

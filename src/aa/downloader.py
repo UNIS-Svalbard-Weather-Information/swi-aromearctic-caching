@@ -103,14 +103,14 @@ def download_latest_near_surface_field_data(
     model="AA",
     resolution="2p5km",
     static_path="./statics/",
-    lon_lims=[9, 33],
+    lon_lims=[7, 35],
     lat_lims=[74, 81],
     int_x=1,
     int_y=1,
     int_h=1,
     start_h=0,
     time_steps=30,
-    output="./temp/latest.nc",
+    output="./temp/aa_latest.nc",
 ):
     """
     Download and process 2D fields of near-surface meteorological variables from a specified model dataset.
@@ -226,10 +226,10 @@ def download_latest_near_surface_field_data(
         ds = (
             full_file.isel(time=slice(0, time_steps))[model_varis]
             .where(
-                (full_file.latitude >= lat_lims[0])
-                & (full_file.latitude <= lat_lims[1])
-                & (full_file.longitude >= lon_lims[0])
-                & (full_file.longitude <= lon_lims[1]),
+                (full_file.latitude >= lat_lims[0] - 0.5)
+                & (full_file.latitude <= lat_lims[1] + 0.5)
+                & (full_file.longitude >= lon_lims[0] - 0.5)
+                & (full_file.longitude <= lon_lims[1] + 0.5),
                 drop=True,
             )
             .squeeze()
