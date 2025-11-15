@@ -1,0 +1,13 @@
+[project]
+name = "swi-aromearctic-caching"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "metpy>=1.7.1",
+    "numpy>=2.3.4",
+    "pandas>=2.3.3",
+    "pyproj>=3.7.2",
+    "xarray>=2025.10.1",
+]
