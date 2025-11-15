@@ -318,9 +318,10 @@ def download_latest_near_surface_field_data(
     ds_reprojected = ds.rio.reproject(target_crs)
     ds_reprojected = ds_reprojected.rename({"x": "longitude", "y": "latitude"})
 
-    ds_reprojected.sel(
+    ds_reprojected = ds_reprojected.sel(
         latitude=slice(lat_lims[1], lat_lims[0]),
         longitude=slice(lon_lims[0], lon_lims[1]),
-    ).to_netcdf(output)
+    )
+    ds_reprojected.to_netcdf(output)
 
     return ds_reprojected
