@@ -17,6 +17,8 @@ import pandas as pd
 import rioxarray
 import gzip
 import os
+import shutil
+import tempfile
 
 
 class Xarray2Json:
@@ -36,11 +38,11 @@ class Xarray2Json:
         time: int = 0,
     ):
         if not output_path:
-            output_path = f"leaflet_velocity_{variable_u}_{variable_v}_{pd.to_datetime(self.ds.time.values[time]).isoformat().replace(':', '') + 'Z'}.gz"
+            output_path = f"leaflet_velocity_{variable_u}_{variable_v}_{pd.to_datetime(self.ds.time.values[time]).isoformat().replace(':', '') + 'Z'}.json.gz"
         else:
             output_path = os.path.join(
                 output_path,
-                f"leaflet_velocity_{variable_u}_{variable_v}_{pd.to_datetime(self.ds.time.values[time]).isoformat().replace(':', '') + 'Z'}.gz",
+                f"leaflet_velocity_{variable_u}_{variable_v}_{pd.to_datetime(self.ds.time.values[time]).isoformat().replace(':', '') + 'Z'}.json.gz",
             )
 
         u = self.ds[variable_u].isel(time=time)
@@ -135,8 +137,22 @@ class Xarray2Json:
             },
         ]
 
-        with gzip.open(output_path, "wt", encoding="utf-8") as f:
-            json.dump(results, f)
+        # Create a unique temporary file in the same directory as the output
+        temp_fd, temp_path = tempfile.mkstemp(
+            suffix=".json.gz", dir=os.path.dirname(output_path)
+        )
+        os.close(temp_fd)  # Close the file descriptor, as gzip.open will open it again
+
+        try:
+            with gzip.open(temp_path, "wt", encoding="utf-8") as f:
+                json.dump(results, f)
+            # Atomically move the temp file to the final destination
+            os.replace(temp_path, output_path)
+        except Exception as e:
+            # Clean up the temp file if something goes wrong
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            raise e
 
     def generate_geojson_grided(
         self, variable: str, output_path: str = None, time: int = 0, conversion_fct=None
@@ -168,12 +184,26 @@ class Xarray2Json:
         #     dtype="float32",  # Ensure data type is compatible
         # )
 
-        da_reprojected.rio.to_raster(
-            output_path,
-            driver="COG",
-            compress="DEFLATE",
-            dtype="float32",
-            overview_levels=[2, 4, 8, 10],
-            tiled=True,
-            windowed=True,
-        )
+        try:
+            # Create a unique temporary file in the same directory
+            temp_fd, temp_path = tempfile.mkstemp(
+                suffix=".tif", dir=os.path.dirname(output_path)
+            )
+            os.close(temp_fd)  # Close the file descriptor, we only need the path
+
+            da_reprojected.rio.to_raster(
+                temp_path,
+                driver="COG",
+                compress="DEFLATE",
+                dtype="float32",
+                overview_levels=[2, 4, 8, 10],
+                tiled=True,
+                windowed=True,
+            )
+            # Atomically move the temp file to the final destination
+            shutil.move(temp_path, output_path)
+        except Exception as e:
+            # Clean up the temp file if something goes wrong
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            raise e
