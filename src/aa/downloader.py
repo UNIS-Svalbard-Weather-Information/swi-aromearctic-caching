@@ -318,7 +318,7 @@ def download_latest_near_surface_field_data(
     logger.info("Reprojecting dataset to WGS84...")
     target_crs = "+proj=longlat +datum=WGS84 +no_defs"
     ds.rio.write_crs(source_crs, inplace=True)
-    ds_reprojected = ds.rio.reproject(target_crs)
+    ds_reprojected = ds.rio.reproject(target_crs, resampling=2)
     ds_reprojected = ds_reprojected.rename({"x": "longitude", "y": "latitude"})
     ds_reprojected = ds_reprojected.sel(
         latitude=slice(lat_lims[1], lat_lims[0]),
