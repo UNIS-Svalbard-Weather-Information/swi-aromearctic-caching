@@ -328,6 +328,6 @@ def download_latest_near_surface_field_data(
     logger.info(f"Saving output to {output}...")
     os.makedirs(os.path.dirname(output), exist_ok=True)
     ds_reprojected.to_netcdf(output)
-    logger.success("Processing complete.")
+    logger.success("Arome Arctic Download and Reprojection complete.")
 
-    return ds_reprojected
+    return output

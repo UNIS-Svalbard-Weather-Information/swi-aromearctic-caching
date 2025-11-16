@@ -58,7 +58,9 @@ def main():
 
             for v in COG_VARIABLES:
                 logger.info(f"Generating COG GeoJSON for variable: {v['variable']}")
-                xarray2json_obj.generate_geojson_grided(time=h, **v)
+                xarray2json_obj.generate_geojson_grided(
+                    time=h, **v, output_path=PATH_COG
+                )
 
         logger.success("Processing completed successfully")
 

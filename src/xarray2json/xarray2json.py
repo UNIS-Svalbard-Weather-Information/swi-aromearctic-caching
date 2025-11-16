@@ -196,7 +196,7 @@ class Xarray2Json:
                 driver="COG",
                 compress="DEFLATE",
                 dtype="float32",
-                overview_levels=[2, 4, 8, 10],
+                overview_levels=[2, 4, 8],
                 tiled=True,
                 windowed=True,
             )
