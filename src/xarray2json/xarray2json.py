@@ -1,8 +1,20 @@
+# SPDX-FileCopyrightText: 2025 Louis Pauchet louis.pauchet@insa-rouen.fr
+#
+# SPDX-License-Identifier: EUPL-1.2
+#
+# This file is part of Svalbard Weather Information - Arome Arctic Caching.
+#
+# Svalbard Weather Information - Arome Arctic Caching is free software:
+# you can redistribute it and/or modify it under the terms of the
+# European Union Public License (EUPL), version 1.2 or later.
+
+
 import xarray as xr
 from typing import Union
 import numpy as np
 import json
 import pandas as pd
+import rioxarray
 
 
 class Xarray2Json:
@@ -12,41 +24,14 @@ class Xarray2Json:
         processing_period: int = 25,
     ):
         self.ds = xr.open_dataset(path)
-        # self.bounding_box = bounding_box
-        # self.safety_factor = safety_factor
         self.processing_period = processing_period
-        # self.model_resolution = model_resolution
-        # self.lat_var_name = lat_var_name
-        # self.lon_var_name = lon_var_name
-        # self.reprojected_data = {}
-
-        # # Calculate latitude step
-        # self.lat_step = (model_resolution / 1.852) / 60 * self.safety_factor
-        # self.target_lats = np.arange(
-        #     self.bounding_box["lat_min"],
-        #     self.bounding_box["lat_max"]
-        #     + self.lat_step,  # Ensure upper bound is included
-        #     self.lat_step,
-        # )
-
-        # # Calculate longitude step at the minimum latitude (most restrictive)
-        # self.lon_step = (
-        #     model_resolution
-        #     / (111.320 * np.cos(np.deg2rad(self.bounding_box["lat_min"])))
-        # ) * self.safety_factor
-        # self.target_lons = np.arange(
-        #     self.bounding_box["lon_min"],
-        #     self.bounding_box["lon_max"]
-        #     + self.lon_step,  # Ensure upper bound is included
-        #     self.lon_step,
-        # )
 
     def generate_json_leaflet_velocity(
         self,
         variable_u: str,
         variable_v: str,
         output_path: str = None,
-        time: Union[str, int] = 0,
+        time: int = 0,
     ):
         if not output_path:
             output_path = f"leaflet_velocity_{variable_u}_{variable_v}_{pd.to_datetime(self.ds.time.values[time]).isoformat().replace(':', '') + 'Z'}.json"
@@ -148,8 +133,40 @@ class Xarray2Json:
 
         pass
 
-    def generate_json_grided(self, variable: str, output_path: str, time: str = None):
-        pass
+    def generate_geojson_grided(
+        self, variable: str, output_path: str = None, time: int = 0, conversion_fct=None
+    ):
+        if not output_path:
+            output_path = f"cog_{variable}_{pd.to_datetime(self.ds.time.values[time]).isoformat().replace(':', '') + 'Z'}.tif"
+
+        da = self.ds[variable].isel(time=time)
+
+        if conversion_fct:
+            da = conversion_fct(da)
+
+        da.rio.set_spatial_dims(x_dim="longitude", y_dim="latitude", inplace=True)
+        da.rio.write_crs("epsg:4326", inplace=True)
+        da_reprojected = da.rio.reproject("epsg:3857")
+
+        # da_reprojected.rio.to_raster(
+        #     output_path,
+        #     tiled=True,
+        #     windowed=True,
+        #     driver="COG",  # Explicitly set the driver to COG
+        #     compress="LZW",  # Or "LZW" for better compatibility
+        #     overview_levels=[2, 4, 8],  # Add overviews for better performance
+        #     dtype="float32",  # Ensure data type is compatible
+        # )
+
+        da_reprojected.rio.to_raster(
+            output_path,
+            driver="COG",
+            compress="DEFLATE",
+            dtype="float32",
+            overview_levels=[2, 4, 8, 10],
+            tiled=True,
+            windowed=True,
+        )
 
     def run_configuration(self, config: Union[dict, str]):
         if isinstance(config, str):
