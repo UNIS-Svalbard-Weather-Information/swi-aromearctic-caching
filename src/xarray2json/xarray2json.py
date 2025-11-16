@@ -15,6 +15,8 @@ import numpy as np
 import json
 import pandas as pd
 import rioxarray
+import gzip
+import os
 
 
 class Xarray2Json:
@@ -34,7 +36,12 @@ class Xarray2Json:
         time: int = 0,
     ):
         if not output_path:
-            output_path = f"leaflet_velocity_{variable_u}_{variable_v}_{pd.to_datetime(self.ds.time.values[time]).isoformat().replace(':', '') + 'Z'}.json"
+            output_path = f"leaflet_velocity_{variable_u}_{variable_v}_{pd.to_datetime(self.ds.time.values[time]).isoformat().replace(':', '') + 'Z'}.gz"
+        else:
+            output_path = os.path.join(
+                output_path,
+                f"leaflet_velocity_{variable_u}_{variable_v}_{pd.to_datetime(self.ds.time.values[time]).isoformat().replace(':', '') + 'Z'}.gz",
+            )
 
         u = self.ds[variable_u].isel(time=time)
         v = self.ds[variable_v].isel(time=time)
@@ -128,16 +135,19 @@ class Xarray2Json:
             },
         ]
 
-        with open(output_path, "w") as f:
+        with gzip.open(output_path, "wt", encoding="utf-8") as f:
             json.dump(results, f)
-
-        pass
 
     def generate_geojson_grided(
         self, variable: str, output_path: str = None, time: int = 0, conversion_fct=None
     ):
         if not output_path:
             output_path = f"cog_{variable}_{pd.to_datetime(self.ds.time.values[time]).isoformat().replace(':', '') + 'Z'}.tif"
+        else:
+            output_path = os.path.join(
+                output_path,
+                f"cog_{variable}_{pd.to_datetime(self.ds.time.values[time]).isoformat().replace(':', '') + 'Z'}.tif",
+            )
 
         da = self.ds[variable].isel(time=time)
 
@@ -167,11 +177,3 @@ class Xarray2Json:
             tiled=True,
             windowed=True,
         )
-
-    def run_configuration(self, config: Union[dict, str]):
-        if isinstance(config, str):
-            import json
-
-            with open(config, "r") as f:
-                config = json.load(f)
-        pass
