@@ -147,7 +147,10 @@ class Xarray2Json:
             with gzip.open(temp_path, "wt", encoding="utf-8") as f:
                 json.dump(results, f)
             # Atomically move the temp file to the final destination
+            os.chmod(temp_path, 0o644)
+
             os.replace(temp_path, output_path)
+            os.chmod(output_path, 0o644)
         except Exception as e:
             # Clean up the temp file if something goes wrong
             if os.path.exists(temp_path):
@@ -200,8 +203,12 @@ class Xarray2Json:
                 tiled=True,
                 windowed=True,
             )
+            os.chmod(temp_path, 0o644)
+
             # Atomically move the temp file to the final destination
             shutil.move(temp_path, output_path)
+            os.chmod(output_path, 0o644)
+
         except Exception as e:
             # Clean up the temp file if something goes wrong
             if os.path.exists(temp_path):
