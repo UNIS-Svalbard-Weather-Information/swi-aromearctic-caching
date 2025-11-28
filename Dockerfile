@@ -25,6 +25,9 @@ RUN apt-get update && \
 
 WORKDIR /swi
 
+RUN useradd -m -u 3000 swi
+USER swi
+
 # Copy only the installed dependencies and your application code
 COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
