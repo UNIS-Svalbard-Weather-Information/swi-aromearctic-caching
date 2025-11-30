@@ -192,11 +192,11 @@ def download_latest_near_surface_field_data(
     model_varnames = {
         "T": "air_temperature_2m",
         "RH": "relative_humidity_2m",
-        "q": "specific_humidity_2m",
+        # "q": "specific_humidity_2m",
         "ur": "x_wind_10m",
         "vr": "y_wind_10m",
         "p_surf": "surface_air_pressure",
-        "T_surf": "air_temperature_0m",
+        # "T_surf": "air_temperature_0m",
         # "MSLP": "air_pressure_at_sea_level",
         # "tau_x": "downward_eastward_momentum_flux_in_air",
         # "tau_y": "downward_northward_momentum_flux_in_air",
@@ -206,7 +206,7 @@ def download_latest_near_surface_field_data(
         # "LW_down": "integral_of_surface_downwelling_longwave_flux_in_air_wrt_time",
         # "LHF": "integral_of_surface_downward_latent_heat_flux_wrt_time",
         # "SHF": "integral_of_surface_downward_sensible_heat_flux_wrt_time",
-        # "cloud_cover": "cloud_area_fraction",
+        "cloud_cover": "cloud_area_fraction",
         # "ABL_height": "atmosphere_boundary_layer_thickness",
         "precip": "precipitation_amount_acc",
     }

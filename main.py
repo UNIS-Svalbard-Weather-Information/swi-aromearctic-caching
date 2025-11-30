@@ -21,11 +21,11 @@ VELOCITY_VARIABLES = [
 ]
 COG_VARIABLES = [
     {"variable": "air_temperature_2m", "conversion_fct": lambda k: k - 273.15},
-    {"variable": "surface_air_pressure"},
+    {"variable": "relative_humidity_2m", "conversion_fct": lambda k: k},
     {"variable": "precipitation_amount"},
     {"variable": "wind_speed_10m"},
+    {"variable": "cloud_cover"},
     {"variable": "wind_direction_10m"},
-    {"variable": "air_temperature_0m", "conversion_fct": lambda k: k - 273.15},
     {"variable": "surface_air_pressure", "conversion_fct": lambda k: k / 100},
 ]
 
