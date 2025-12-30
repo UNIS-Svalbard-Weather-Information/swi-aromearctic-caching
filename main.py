@@ -24,7 +24,7 @@ COG_VARIABLES = [
     {"variable": "relative_humidity_2m", "conversion_fct": lambda k: k},
     {"variable": "precipitation_amount"},
     {"variable": "wind_speed_10m"},
-    {"variable": "cloud_cover"},
+    {"variable": "cloud_area_fraction"},
     {"variable": "wind_direction_10m"},
     {"variable": "surface_air_pressure", "conversion_fct": lambda k: k / 100},
 ]
