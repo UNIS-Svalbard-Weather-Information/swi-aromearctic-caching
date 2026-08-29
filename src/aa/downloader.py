@@ -33,11 +33,10 @@
 # SOFTWARE.
 
 
-import xarray as xr
-import numpy as np
 import os
-import rioxarray
-import pyproj
+
+import numpy as np
+import xarray as xr
 from loguru import logger
 
 
@@ -103,8 +102,8 @@ def download_latest_near_surface_field_data(
     model="AA",
     resolution="2p5km",
     static_path="./statics/",
-    lon_lims=[7, 35],
-    lat_lims=[74, 81],
+    lon_lims=None,
+    lat_lims=None,
     int_x=1,
     int_y=1,
     int_h=1,
@@ -174,6 +173,11 @@ def download_latest_near_surface_field_data(
     - The output is reprojected to WGS84 (EPSG:4326) and saved as a NetCDF file.
 
     """
+    if lon_lims is None:
+        lon_lims = [7, 35]
+    if lat_lims is None:
+        lat_lims = [74, 81]
+
     logger.info(
         f"Starting download and processing for model: {model}, resolution: {resolution}"
     )
@@ -238,20 +242,20 @@ def download_latest_near_surface_field_data(
     logger.info("Processing flux and accumulated variables...")
     for vari in model_varis:
         if vari[:8] == "integral":
-            ds[vari][dict(time=range(1, len(ds["time"])))] -= ds[vari][
-                dict(time=range(0, len(ds["time"]) - 1))
+            ds[vari][{"time": range(1, len(ds["time"]))}] -= ds[vari][
+                {"time": range(len(ds["time"]) - 1)}
             ].values
-            ds[vari][dict(time=0)] /= start_h
+            ds[vari][{"time": 0}] /= start_h
             ds[vari] /= 3600.0 * int_h
             ds[vari].attrs["standard_name"] = ds[vari].attrs["standard_name"][12:-9]
             ds[vari].attrs["units"] = "W/m^2"
             ds[vari].attrs["long_name"] = ds[vari].attrs["long_name"][12:]
             ds = ds.rename({vari: vari[12:-9]})
         elif vari[-3:] == "acc":
-            ds[vari][dict(time=range(1, len(ds["time"])))] -= ds[vari][
-                dict(time=range(0, len(ds["time"]) - 1))
+            ds[vari][{"time": range(1, len(ds["time"]))}] -= ds[vari][
+                {"time": range(len(ds["time"]) - 1)}
             ].values
-            ds[vari][dict(time=0)] /= start_h
+            ds[vari][{"time": 0}] /= start_h
             ds[vari].attrs["long_name"] = ds[vari].attrs["long_name"][12:]
             ds = ds.rename({vari: vari[:-4]})
 

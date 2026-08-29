@@ -9,16 +9,15 @@
 # European Union Public License (EUPL), version 1.2 or later.
 
 
-import xarray as xr
-from typing import Union
-import numpy as np
-import json
-import pandas as pd
-import rioxarray
 import gzip
+import json
 import os
 import shutil
 import tempfile
+
+import numpy as np
+import pandas as pd
+import xarray as xr
 
 
 class Xarray2Json:
@@ -34,7 +33,7 @@ class Xarray2Json:
         self,
         variable_u: str,
         variable_v: str,
-        output_path: str = None,
+        output_path: str | None = None,
         time: int = 0,
     ):
         if not output_path:
@@ -151,14 +150,18 @@ class Xarray2Json:
 
             os.replace(temp_path, output_path)
             os.chmod(output_path, 0o644)
-        except Exception as e:
+        except Exception:
             # Clean up the temp file if something goes wrong
             if os.path.exists(temp_path):
                 os.remove(temp_path)
-            raise e
+            raise
 
     def generate_geojson_grided(
-        self, variable: str, output_path: str = None, time: int = 0, conversion_fct=None
+        self,
+        variable: str,
+        output_path: str | None = None,
+        time: int = 0,
+        conversion_fct=None,
     ):
         if not output_path:
             output_path = f"cog_{variable}_{pd.to_datetime(self.ds.time.values[time]).isoformat().replace(':', '') + 'Z'}.tif"
@@ -209,8 +212,8 @@ class Xarray2Json:
             shutil.move(temp_path, output_path)
             os.chmod(output_path, 0o644)
 
-        except Exception as e:
+        except Exception:
             # Clean up the temp file if something goes wrong
             if os.path.exists(temp_path):
                 os.remove(temp_path)
-            raise e
+            raise

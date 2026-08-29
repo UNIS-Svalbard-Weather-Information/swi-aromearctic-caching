@@ -8,10 +8,12 @@
 # you can redistribute it and/or modify it under the terms of the
 # European Union Public License (EUPL), version 1.2 or later.
 
+import os
+
 from loguru import logger
+
 from src.aa.downloader import download_latest_near_surface_field_data
 from src.xarray2json import xarray2json
-import os
 
 PATH_VELOCITY = "./data/forecast/aa/velocity"
 PATH_COG = "./data/forecast/aa/cog"
@@ -47,7 +49,7 @@ def main():
         xarray2json_obj = xarray2json.Xarray2Json(path=nc_file)
         logger.info("Initialized Xarray2Json object")
 
-        for h in range(0, HOURS_TO_PROCESS):
+        for h in range(HOURS_TO_PROCESS):
             logger.info(f"Processing hour {h}/{HOURS_TO_PROCESS}")
 
             for p in VELOCITY_VARIABLES:
