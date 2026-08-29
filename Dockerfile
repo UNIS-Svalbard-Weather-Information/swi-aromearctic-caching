@@ -30,8 +30,9 @@ COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY . .
 
-# Ensure the script is executable
-RUN chmod +x /swi/main.py
+# Make the entrypoint scripts executable
+RUN chmod +x /swi/entrypoint.sh /swi/run-cron.sh /swi/main.py
 
-# Run the script
-CMD ["python", "/swi/main.py"]
+# Use the entrypoint script - supports DOCKER_CRON=1 to stay alive between runs so an
+# external scheduler can re-trigger the job via `docker exec <container> run-cron`
+ENTRYPOINT ["./entrypoint.sh"]
