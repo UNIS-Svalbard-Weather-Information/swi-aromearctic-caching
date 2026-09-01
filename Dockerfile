@@ -1,5 +1,5 @@
 # Stage 1: Build stage
-FROM python:3.13-slim AS builder
+FROM python:3.14-slim AS builder
 
 WORKDIR /swi
 
@@ -14,7 +14,7 @@ COPY uv.lock .
 RUN uv pip install --system --no-cache-dir .
 
 # Stage 2: Runtime stage
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
