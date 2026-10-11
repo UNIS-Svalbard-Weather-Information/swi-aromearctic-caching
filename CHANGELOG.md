@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.9](https://github.com/UNIS-Svalbard-Weather-Information/swi-aromearctic-caching/compare/0.0.8...0.0.9) (2026-10-11)
+
+
+### Bug Fixes
+
+* **deps:** refresh uv.lock to current releases ([b82dd91](https://github.com/UNIS-Svalbard-Weather-Information/swi-aromearctic-caching/commit/b82dd91f3df1166868a72a88249fab627e0c2bda))
+
 ## [0.0.8](https://github.com/UNIS-Svalbard-Weather-Information/swi-aromearctic-caching/compare/0.0.7...0.0.8) (2026-08-29)
 
 
