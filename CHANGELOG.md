@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0](https://github.com/UNIS-Svalbard-Weather-Information/swi-aromearctic-caching/compare/0.0.9...0.1.0) (2026-10-12)
+
+
+### Features
+
+* **docker:** run the cron job as an unprivileged user ([0ad58d2](https://github.com/UNIS-Svalbard-Weather-Information/swi-aromearctic-caching/commit/0ad58d2d6696f5f66ce37601712eed9ef051a134))
+* **docker:** run the cron job as an unprivileged user ([22404a7](https://github.com/UNIS-Svalbard-Weather-Information/swi-aromearctic-caching/commit/22404a7fedc205421f43b19cf9cb8b060884aa31))
+
 ## [0.0.9](https://github.com/UNIS-Svalbard-Weather-Information/swi-aromearctic-caching/compare/0.0.8...0.0.9) (2026-10-11)
 
 
